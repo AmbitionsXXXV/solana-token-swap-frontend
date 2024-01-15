@@ -66,22 +66,23 @@ export const WithdrawSingleTokenType: FC = () => {
       transaction.add(createATAInstruction)
     }
 
+    // 构建用于同时从两边的交换池提取代币的指令
     const instruction = TokenSwap.withdrawAllTokenTypesInstruction(
-      tokenSwapStateAccount,
-      swapAuthority,
-      publicKey,
-      poolMint,
-      feeAccount,
-      tokenAccountPool,
-      poolKryptAccount,
-      poolScroogeAccount,
-      kryptATA,
-      scroogeATA,
-      TOKEN_SWAP_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      poolTokenAmount * 10 ** poolMintInfo.decimals,
-      0,
-      0,
+      tokenSwapStateAccount, // token swap 状态账户
+      swapAuthority, // 交换池的授权账户
+      publicKey, // 用户的转账授权账户
+      poolMint, // LP-token 的 mint 地址
+      feeAccount, // 接收提取费用的代币账户
+      tokenAccountPool, // 用户的 LP-token 账户，用于销毁 LP-token
+      poolKryptAccount, // 交换池中的代币 A 账户
+      poolScroogeAccount, // 交换池中的代币 B 账户
+      kryptATA, // 用户接收代币 A 的账户
+      scroogeATA, // 用户接收代币 B 的账户
+      TOKEN_SWAP_PROGRAM_ID, // Token Swap 程序的地址
+      TOKEN_PROGRAM_ID, // Token 程序的地址
+      poolTokenAmount * 10 ** poolMintInfo.decimals, // 用户希望销毁的 LP-token 数量
+      0, // 提取代币 A 的最小数量，设为 0 可能会有滑点
+      0, // 提取代币 B 的最小数量，设为 0 可能会有滑点
     )
 
     transaction.add(instruction)

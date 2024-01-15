@@ -24,7 +24,9 @@ import {
 export const DepositSingleTokenType: FC = () => {
   const [poolTokenAmount, setAmount] = useState(0)
 
+  // 获取钱包连接状态
   const { connection } = useConnection()
+  // 获取钱包公钥
   const { publicKey, sendTransaction } = useWallet()
 
   const handleSubmit = (event: any) => {
@@ -39,13 +41,22 @@ export const DepositSingleTokenType: FC = () => {
       return
     }
 
+    // poolMintInfo 保存我们已经获取的池代币的数据
     const poolMintInfo = await token.getMint(connection, poolMint)
 
+    // 获取与 kryptMint 代币相关联的代币账户地址
+    // 这个地址用于管理和存储 kryptMint 代币
     const kryptATA = await token.getAssociatedTokenAddress(kryptMint, publicKey)
+
+    // 获取与 ScroogeCoinMint 代币相关联的代币账户地址
+    // 这个地址用于管理和存储 ScroogeCoinMint 代币
     const scroogeATA = await token.getAssociatedTokenAddress(
       ScroogeCoinMint,
       publicKey,
     )
+
+    // 获取与 poolMint 代币相关联的代币账户地址
+    // 这个地址用于管理和存储流动性池中的 poolMint 代币
     const tokenAccountPool = await token.getAssociatedTokenAddress(
       poolMint,
       publicKey,
@@ -53,6 +64,7 @@ export const DepositSingleTokenType: FC = () => {
 
     const transaction = new Web3.Transaction()
 
+    // 检查并创建代币账户
     let account = await connection.getAccountInfo(tokenAccountPool)
 
     if (account == null) {
@@ -65,24 +77,26 @@ export const DepositSingleTokenType: FC = () => {
       transaction.add(createATAInstruction)
     }
 
+    // 构建用于同时向两边的交换池存入代币的指令
     const instruction = TokenSwap.depositAllTokenTypesInstruction(
-      tokenSwapStateAccount,
-      swapAuthority,
-      publicKey,
-      kryptATA,
-      scroogeATA,
-      poolKryptAccount,
-      poolScroogeAccount,
-      poolMint,
-      tokenAccountPool,
-      TOKEN_SWAP_PROGRAM_ID,
-      token.TOKEN_PROGRAM_ID,
-      poolTokenAmount * 10 ** poolMintInfo.decimals,
-      100e9,
-      100e9,
+      tokenSwapStateAccount, // token swap 状态账户
+      swapAuthority, // 交换池的授权账户
+      publicKey, // 用户的转账授权账户
+      kryptATA, // 用户代币 A 账户，用于向交换池代币 A 账户转账
+      scroogeATA, // 用户代币 B 账户，用于向交换池代币 B 账户转账
+      poolKryptAccount, // 交换池代币 A 账户，接收用户的代币 A
+      poolScroogeAccount, // 交换池代币 B 账户，接收用户的代币 B
+      poolMint, // LP-token 的 mint 地址
+      tokenAccountPool, // 用户的 LP-token 账户，交换池向此账户铸造 LP-token
+      TOKEN_SWAP_PROGRAM_ID, // Token Swap 程序的地址
+      token.TOKEN_PROGRAM_ID, // Token 程序的地址
+      poolTokenAmount * 10 ** poolMintInfo.decimals, // 用户希望接收的 LP-token 数量
+      100e9, // 存入代币 A 的最大数量，设置较大数值以减少交易失败的可能性
+      100e9, // 存入代币 B 的最大数量，同上
     )
 
     transaction.add(instruction)
+
     try {
       let txid = await sendTransaction(transaction, connection)
       alert(
